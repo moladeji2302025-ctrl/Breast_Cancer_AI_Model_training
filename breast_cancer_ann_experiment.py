@@ -14,6 +14,7 @@ Architectures:
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import re
 from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -23,6 +24,25 @@ from tensorflow import keras
 from tensorflow.keras import layers
 import warnings
 warnings.filterwarnings('ignore')
+
+
+def sanitize_filename(name):
+    """
+    Sanitize a string to be used as a filename.
+    
+    Args:
+        name (str): String to sanitize
+        
+    Returns:
+        str: Sanitized filename-safe string
+    """
+    # Remove or replace special characters
+    sanitized = re.sub(r'[^\w\s-]', '', name)
+    # Replace spaces with underscores
+    sanitized = re.sub(r'\s+', '_', sanitized)
+    # Convert to lowercase
+    sanitized = sanitized.lower()
+    return sanitized
 
 
 def preprocess_data(test_size=0.2, random_state=42):
@@ -185,7 +205,7 @@ def evaluate_model(model, X_test, y_test):
     return metrics, y_pred
 
 
-def plot_confusion_matrix(cm, title, save_path=None):
+def plot_confusion_matrix(cm, title, save_path=None, show_plot=False):
     """
     Plot a confusion matrix.
     
@@ -193,6 +213,7 @@ def plot_confusion_matrix(cm, title, save_path=None):
         cm (np.ndarray): Confusion matrix
         title (str): Title for the plot
         save_path (str, optional): Path to save the plot
+        show_plot (bool): Whether to display the plot (default: False for batch processing)
     """
     plt.figure(figsize=(8, 6))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=True,
@@ -205,7 +226,8 @@ def plot_confusion_matrix(cm, title, save_path=None):
     
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    plt.show()
+    if show_plot:
+        plt.show()
     plt.close()
 
 
@@ -296,10 +318,11 @@ def run_experiment(test_size=0.2, epochs=100, batch_size=32):
         
         # Plot confusion matrix
         cm_title = f"Confusion Matrix - {name}\n(Test Size: {test_size})"
+        filename = f"confusion_matrix_{sanitize_filename(name)}_test_{test_size}.png"
         plot_confusion_matrix(
             metrics['confusion_matrix'], 
             cm_title,
-            save_path=f"confusion_matrix_{name.replace(' ', '_').replace('(', '').replace(')', '').lower()}_test_{test_size}.png"
+            save_path=filename
         )
     
     # Summary of results
